@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>LIFF Sample</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+  <h1>LIFFアプリへようこそ</h1>
+  <div id="greeting"></div>
+
+  <script>
+    const liffId = "YOUR_LIFF_ID"; // id
+
+    async function main() {
+      await liff.init({ liffId });
+
+      if (!liff.isLoggedIn()) {
+        liff.login();
+      } else {
+        try {
+          const profile = await liff.getProfile();
+          document.getElementById('greeting').textContent = `こんにちは、${profile.displayName}さん！`;
+        } catch (error) {
+          console.error('プロフィール取得エラー:', error);
+          document.getElementById('greeting').textContent = 'プロフィール取得に失敗しました。';
+        }
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
