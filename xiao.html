@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>薩摩藩</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --chat-bg: #1e1e1e;
+            --header-bg: #252525;
+            --user-msg-bg: #4a90e2;
+            --bot-msg-bg: #333333;
+            --text-color: #e0e0e0;
+            --accent-color: #ffd700;
+            --input-bg: #2c2c2c;
+            --modal-bg: rgba(0, 0, 0, 0.85);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--chat-bg);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        header {
+            padding: 15px;
+            background: var(--header-bg);
+            text-align: center;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #4caf50;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #4caf50;
+        }
+
+        .settings-btn {
+            position: absolute;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .settings-btn:hover { color: var(--accent-color); }
+
+        #messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scrollbar-width: thin;
+            scrollbar-color: #444 var(--chat-bg);
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            animation: fadeIn 0.2s ease;
+            word-wrap: break-word;
+            position: relative;
+        }
+        
+        .user {
+            align-self: flex-end;
+            background-color: var(--user-msg-bg);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .bot {
+            align-self: flex-start;
+            background-color: var(--bot-msg-bg);
+            color: var(--text-color);
+            border-bottom-left-radius: 4px;
+        }
+
+        .error {
+            align-self: center;
+            background-color: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            font-size: 0.85rem;
+            padding: 8px 15px;
+        }
+
+        .input-area {
+            padding: 15px 20px;
+            background: var(--header-bg);
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        input[type="text"], input[type="password"] {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 24px;
+            border: 1px solid #444;
+            background: var(--input-bg);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: var(--accent-color);
+        }
+
+        button.send-btn {
+            background: var(--accent-color);
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 24px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        button.send-btn:active { transform: scale(0.96); }
+        button.send-btn:disabled { background: #555; cursor: not-allowed; opacity: 0.5; color: #888; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--modal-bg);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #2d2d2d;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 1px solid #444;
+        }
+        .modal-content h2 {
+            margin-top: 0;
+            color: var(--accent-color);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        .modal-content button {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .bot strong { color: var(--accent-color); }
+        .bot ul { padding-left: 20px; margin: 5px 0; }
+        .bot li { margin-bottom: 5px; }
+
+        .typing-indicator { display: inline-flex; gap: 4px; padding: 5px 0; }
+        .dot {
+            width: 6px; height: 6px;
+            background: #888;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="authModal" class="modal">
+    <div class="modal-content">
+        <h2>アクセス認証</h2>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:15px;">パスワードを入力してください</p>
+        <input type="password" id="passInput" placeholder="Pass Phrase">
+        <button onclick="saveCredentials()">送信</button>
+    </div>
+</div>
+
+<div class="chat-container">
+    <header>
+        <div class="status-dot"></div>
+        <h1>SEISEN UNIT ¢1</h1>
+        <button class="settings-btn" onclick="clearCredentials()" title="認証リセット">⚙</button>
+    </header>
+
+    <div id="messages">
+        <div class="message bot">
+            ご要件をお話下さい
+        </div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="query" placeholder="メッセージを入力..." autocomplete="off">
+        <button id="sendBtn" class="send-btn" onclick="sendMessage()">送信</button>
+    </div>
+</div>
+
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz-NA5d9t3eGsfry4Ni6hISgBsTPZRxr0M2tWCVyAlmRBr9XIaME7yWd6A1L3ROIFQi/exec";
+    const LS_PASS_KEY = 'chat_app_pass_v1';
+    const LS_UID_KEY = 'chat_app_uid_v1';
+
+    const inputField = document.getElementById('query');
+    const sendBtn = document.getElementById('sendBtn');
+    const messagesDiv = document.getElementById('messages');
+    const authModal = document.getElementById('authModal');
+    const passInput = document.getElementById('passInput');
+
+    window.addEventListener('load', () => {
+        checkAuth();
+        if (!localStorage.getItem(LS_UID_KEY)) {
+            localStorage.setItem(LS_UID_KEY, generateUUID());
+        }
+    });
+
+    function checkAuth() {
+        const storedPass = localStorage.getItem(LS_PASS_KEY);
+        if (!storedPass) {
+            authModal.style.display = 'flex';
+            passInput.focus();
+        } else {
+            authModal.style.display = 'none';
+            inputField.focus();
+        }
+    }
+
+    function saveCredentials() {
+        const val = passInput.value.trim();
+        if (val) {
+            localStorage.setItem(LS_PASS_KEY, val);
+            authModal.style.display = 'none';
+            inputField.focus();
+        }
+    }
+
+    function clearCredentials() {
+        if(confirm('認証情報を削除しますか？')) {
+            localStorage.removeItem(LS_PASS_KEY);
+            location.reload();
+        }
+    }
+
+    inputField.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    passInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') saveCredentials();
+    });
+
+    async function sendMessage() {
+        const text = inputField.value.trim();
+        if (!text) return;
+
+        const passPhrase = localStorage.getItem(LS_PASS_KEY);
+        const userId = localStorage.getItem(LS_UID_KEY);
+
+        if (!passPhrase) {
+            checkAuth();
+            return;
+        }
+
+        appendMessage(text, 'user');
+        inputField.value = '';
+        inputField.disabled = true;
+        sendBtn.disabled = true;
+
+        const loadingId = appendLoading();
+
+        try {
+            const response = await fetch(GAS_URL, {
+                method: "POST",
+                redirect: "follow",
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify({
+                    message: text,
+                    pass: passPhrase,
+                    userId: userId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            removeLoading(loadingId);
+
+            if (data.error) {
+                appendMessage("エラー: " + data.error, 'error');
+                if(data.error.includes("認証")) {
+                    setTimeout(() => {
+                        localStorage.removeItem(LS_PASS_KEY);
+                        checkAuth();
+                    }, 2000);
+                }
+            } else {
+                const formatted = formatText(data.reply);
+                appendMessage(formatted, 'bot', true);
+            }
+
+        } catch (e) {
+            removeLoading(loadingId);
+            appendMessage("通信エラー: " + e.message, 'error');
+            console.error(e);
+        } finally {
+            inputField.disabled = false;
+            sendBtn.disabled = false;
+            inputField.focus();
+        }
+    }
+
+    function appendMessage(text, type, isHtml = false) {
+        const div = document.createElement('div');
+        div.className = `message ${type}`;
+        if (isHtml) {
+            div.innerHTML = text;
+        } else {
+            div.innerText = text;
+        }
+        messagesDiv.appendChild(div);
+        scrollToBottom();
+    }
+
+    function appendLoading() {
+        const id = 'loading-' + Date.now();
+        const div = document.createElement('div');
+        div.id = id;
+        div.className = 'message bot';
+        div.innerHTML = '<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+        messagesDiv.appendChild(div);
+        scrollToBottom();
+        return id;
+    }
+
+    function removeLoading(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    function scrollToBottom() {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function formatText(text) {
+        if (!text) return "";
+        let formatted = text
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        return formatted;
+    }
+
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+</script>
+
+</body>
+</html>
